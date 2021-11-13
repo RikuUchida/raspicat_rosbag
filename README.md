@@ -2,11 +2,8 @@
 
 [![docker-image-relese](https://github.com/uhobeike/raspicat_rosbag/actions/workflows/docker-image-relese.yaml/badge.svg)](https://github.com/uhobeike/raspicat_rosbag/actions/workflows/docker-image-relese.yaml)
 
-# Overview explanation
-
-## raspicat_rosbag/rosbag_play/gmapping
-
-* [こちらのgoogleドライブ](https://drive.google.com/drive/folders/10M9LNWEwlFVunHTv-vx0vhNK5xqopGc_?usp=sharing)からrosbagをダウンロードしgmappingを実行しパラメータ調整を行うためのパッケージです。
+* [こちらのgoogleドライブ](https://drive.google.com/drive/folders/10M9LNWEwlFVunHTv-vx0vhNK5xqopGc_?usp=sharing)からrosbagをダウンロードし
+dockerを用いてマッピングや自己位置推定を実行することでパラメータ調整を行うためのパッケージです。
 
 * rosbagがダウンロード済みの場合は再ダウンロードは行われません。
 
@@ -14,30 +11,63 @@
 
 # How to use
 
-## raspicat_rosbag/rosbag_play/gmapping
+## 環境構築
 
-* 0thターミナル(事前準備←マウント元の用意&環境構築)
+* [以下のスクリプトを実行](https://github.com/uhobeike/raspicat_rosbag/blob/master/helper_scripts/environment_setting.sh)
 ```
-mkdir -p ~/raspicat_rosbagslam_ws/src && cd ~/raspicat_rosbagslam_ws/src 
-git clone https://github.com/CIT-Autonomous-Robot-Lab/raspicat_slam.git
-git clone https://github.com/uhobeike/raspicat_rosbag.git
-cd ~/raspicat_rosbagslam_ws/
-catkin build
-source ~/raspicat_rosbagslam_ws/devel/setup.bash
+./helper_scripts/environment_setting.sh
 ```
+
+## raspicat_rosbag/rosbag_play/gmapping
 
 * 1stターミナル(システムの起動方法)
 ```
-roslaunch raspicat_rosbag rosbag_play_gmapping.launch rosbag_play_speed:=1.0
+roslaunch raspicat_rosbag rosbag_play_gmapping.launch rosbag_play_file_number:=3 rosbag_play_speed:=1.0 save_map_to_raspicat_navigation:=true
 ```
-
+👆(`save_map_to_raspicat_navigation:=true`にすることでroslaunch終了前にraspicat_slam/maps/にあるマップデータがraspicat_navigation/config/maps/コピーされます。rosbag_play_file_number:=0は[ここに列挙されている配列のインデックス](https://github.com/uhobeike/raspicat_rosbag/blob/master/rosbag_download/scripts/download_list.sh)です。)
 * 2ndターミナル(マウント元にmapを保存する方法)
 ```
-docker exec -i -t raspicat_gmapping bash
-cd maps
+docker exec -i -t raspicat_gmapping bash -c "cd maps;bash"
 rosrun map_server map_saver -f map
-↑(raspicat_rosbag_ws/src/raspicat_slam/maps/下に保存されます。)
 ```
+👆(raspicat_rosbag_ws/src/raspicat_slam/maps/下に保存されます。)
+
+* 調整するパラメータファイル
+
+[`raspicat_slam/launch/slam_remote_pc.launch`](https://github.com/CIT-Autonomous-Robot-Lab/raspicat_slam/blob/master/launch/slam_remote_pc.launch)
+
+## raspicat_rosbag/rosbag_play/amcl
+
+* 1stターミナル(システムの起動方法)
+```
+roslaunch raspicat_rosbag rosbag_play_amcl.launch rosbag_play_file_number:=4 rosbag_play_speed:=1.0 map_file:=map.yaml
+```
+
+* 調整するパラメータファイル
+
+[`raspicat_navigation/launch/amcl.launch`](https://github.com/CIT-Autonomous-Robot-Lab/raspicat_navigation/blob/master/launch/amcl.launch)
+
+## raspicat_rosbag/rosbag_play/emcl
+
+* 1stターミナル(システムの起動方法)
+```
+roslaunch raspicat_rosbag rosbag_play_emcl.launch rosbag_play_file_number:=4 rosbag_play_speed:=1.0 map_file:=map.yaml
+```
+
+* 調整するパラメータファイル
+
+[`raspicat_navigation/launch/emcl.launch`](https://github.com/CIT-Autonomous-Robot-Lab/raspicat_navigation/blob/master/launch/emcl.launch)
+
+## raspicat_rosbag/rosbag_play/mcl_ros
+
+* 1stターミナル(システムの起動方法)
+```
+roslaunch raspicat_rosbag rosbag_play_mcl_ros.launch rosbag_play_file_number:=4 rosbag_play_speed:=1.0 map_file:=map.yaml
+```
+
+* 調整するパラメータファイル
+
+[`raspicat_navigation/launch/mcl_ros.launch`](https://github.com/CIT-Autonomous-Robot-Lab/raspicat_navigation/blob/master/launch/mcl_ros.launch)
 
 ## How to deal with error
 
